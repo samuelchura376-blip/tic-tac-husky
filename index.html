@@ -1,0 +1,979 @@
+<title>Tic Tac Husky</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: encabezado con logo y reloj; tarjetas de color fuerte (naranja = tiempo, azul = agua, amarillo = alarmas, marino = horario); Husky pequeño fijo en la esquina inferior derecha. */
+:root {
+  --bg: #e4f3fb;
+  --dot: #bddcee;
+  --surface: #ffffff;
+  --surface-2: #dcebf3;
+  --fg: #10202b;
+  --muted: #4f6a7a;
+  --line: #c3d9e6;
+  --accent: #e8450e;
+  --water: #0b7fc4;
+  --ok: #14a064;
+  --navy: #12304a;
+  --sun: #ffc933;
+  --sun-ink: #2a1d00;
+  --field-bg: #ffffff;
+  --field-fg: #10202b;
+  --fox: #f08a3c;
+  --fox-dark: #5a3828;
+  --fox-white: #fff7ee;
+  --fox-ear: #3b2a22;
+  --pt-a: #ffe3d3; --pt-b: #ffd3dc; --pt-ink: #4a1c0c; --pt-strong: #c94a14;
+  --pw-a: #d6edfa; --pw-b: #d0f1ee; --pw-ink: #0c3a56; --pw-strong: #0b7fc4;
+  --pa-a: #fff2c4; --pa-ink: #3a2a00; --pa-strong: #2f5470;
+  --ps-a: #dce7f2; --ps-ink: #14324c; --ps-strong: #2f5470; --ps-now: #ffe38f;
+  --item: rgba(255,255,255,.6); --on-strong: #ffffff;
+  --font-display: "Fredoka", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #09141c; --dot: #12283a; --surface: #13232f; --surface-2: #1c303d; --fg: #e8f0f5; --muted: #93aab8;
+    --line: #27414f; --accent: #ff7a3d; --water: #4cb4ee; --ok: #3fcf8e;
+    --fox: #f59a50; --fox-dark: #6b4632; --fox-white: #fff1e3; --fox-ear: #2a1d17;
+    --pt-a: #4a2c25; --pt-b: #4a263a; --pt-ink: #ffe6da; --pt-strong: #ff9a62;
+    --pw-a: #173d52; --pw-b: #164a4c; --pw-ink: #d8f0fb; --pw-strong: #5cc0f2;
+    --pa-a: #4a4018; --pa-ink: #fff1c2; --pa-strong: #ffd45c;
+    --ps-a: #1d3347; --ps-ink: #e2edf7; --ps-strong: #8cc0e6; --ps-now: #5a4a1a;
+    --item: rgba(255,255,255,.08); --on-strong: #1a1008;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #09141c; --dot: #12283a; --surface: #13232f; --surface-2: #1c303d; --fg: #e8f0f5; --muted: #93aab8;
+  --line: #27414f; --accent: #ff7a3d; --water: #4cb4ee; --ok: #3fcf8e;
+  --fox: #f59a50; --fox-dark: #6b4632; --fox-white: #fff1e3; --fox-ear: #2a1d17;
+  --pt-a: #4a2c25; --pt-b: #4a263a; --pt-ink: #ffe6da; --pt-strong: #ff9a62;
+  --pw-a: #173d52; --pw-b: #164a4c; --pw-ink: #d8f0fb; --pw-strong: #5cc0f2;
+  --pa-a: #4a4018; --pa-ink: #fff1c2; --pa-strong: #ffd45c;
+  --ps-a: #1d3347; --ps-ink: #e2edf7; --ps-strong: #8cc0e6; --ps-now: #5a4a1a;
+  --item: rgba(255,255,255,.08); --on-strong: #1a1008;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  background-image: radial-gradient(var(--dot) 1.4px, transparent 1.5px); background-size: 24px 24px;
+  padding-block: 22px 170px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+.wrap { max-width: 1000px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; text-wrap: balance; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; box-shadow: 0 0 0 5px var(--navy); }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* Encabezado */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin-bottom: 24px; }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.logo { width: 76px; height: 76px; flex: none; filter: drop-shadow(0 4px 0 rgba(0,0,0,.12)); }
+.brand h1 { font-size: clamp(36px, 7vw, 54px); line-height: 1; letter-spacing: -.01em; }
+.brand h1 span { color: var(--accent); }
+.tag-line { color: var(--muted); font-weight: 700; margin-top: 4px; }
+.clock { background: var(--surface); color: var(--fg); border-radius: 18px; padding: 10px 18px; text-align: right; box-shadow: 0 4px 0 rgba(0,0,0,.08); border: 1px solid var(--line); }
+.clock .time { font-family: var(--font-display); font-size: 36px; line-height: 1; }
+.clock .date { color: var(--muted); font-size: 14px; text-transform: capitalize; }
+
+/* Alertas */
+.alerts { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: grid; gap: 8px; margin-bottom: 14px; }
+.alerts:empty { display: none; }
+.alert { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 16px; border-radius: 16px; border: 3px solid var(--accent); background: var(--surface); box-shadow: 0 8px 24px rgba(0,0,0,.22); }
+.alert.water { border-color: var(--water); }
+.alert .msg { flex: 1 1 200px; min-width: 0; }
+.alert .msg b { font-family: var(--font-display); font-size: 19px; display: block; }
+.alert .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.layout { display: block; }
+.main { display: grid; gap: 20px; min-width: 0; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+
+.btn { border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 14px; font-weight: 800; }
+.btn:hover { filter: brightness(1.06); }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.water { background: var(--water); color: #fff; border-color: var(--water); }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 5px 11px; font-size: 14px; }
+
+.panel { border-radius: 24px; padding: 22px; min-width: 0; box-shadow: 0 5px 0 rgba(0,0,0,.08); border: 1px solid rgba(0,0,0,.05); }
+.panel h2 { font-size: 24px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 14px; }
+.note { font-size: 14px; opacity: .85; }
+.field { display: grid; gap: 3px; font-size: 13px; font-weight: 800; }
+input[type="number"], input[type="time"], input[type="text"], select {
+  background: var(--field-bg); color: var(--field-fg); border: 2px solid rgba(0,0,0,.14); border-radius: 10px; padding: 6px 9px; min-width: 0;
+}
+input[type="number"] { width: 78px; }
+.cfg-grid { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 10px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Pomodoro (durazno a rosa suave) */
+.pomo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px 32px; align-items: center; padding: 26px; background: linear-gradient(135deg, var(--pt-a), var(--pt-b)); color: var(--pt-ink); }
+.ring-box { position: relative; width: 230px; height: 230px; margin: 0 auto; }
+.ring-box svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-bg { stroke: var(--pt-ink); opacity: .13; }
+.ring-fg { stroke: var(--pt-strong); transition: stroke-dashoffset .3s linear, stroke .3s; }
+.ring-box.rest .ring-fg { stroke: var(--ok); }
+.ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.ring-center .big { font-family: var(--font-display); font-size: 56px; line-height: 1; }
+.ring-center .lbl { font-size: 14px; margin-top: 4px; opacity: .85; font-weight: 700; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.tab { border: 2px solid var(--pt-strong); background: transparent; color: var(--pt-ink); border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: 14px; }
+.tab[aria-pressed="true"] { background: var(--pt-strong); color: var(--on-strong); }
+.pomo .btn { background: transparent; color: var(--pt-ink); border-color: var(--pt-strong); }
+.pomo .btn.primary { background: var(--pt-strong); color: var(--on-strong); min-width: 130px; font-size: 19px; padding: 10px 20px; }
+.ctrls { display: flex; flex-wrap: wrap; gap: 8px; }
+.stats { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; }
+details.cfg { margin-top: 12px; }
+details.cfg summary { cursor: pointer; font-weight: 800; font-size: 14px; }
+
+/* Agua (celeste a menta suave) */
+.water-panel { background: linear-gradient(135deg, var(--pw-a), var(--pw-b)); color: var(--pw-ink); }
+.glasses { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.glass { width: 26px; height: 36px; }
+.glass path.cup { fill: rgba(255,255,255,.45); stroke: var(--pw-strong); stroke-width: 2; }
+.glass rect.fill { fill: var(--pw-strong); opacity: 0; }
+.glass.on rect.fill { opacity: 1; }
+.water-next { font-family: var(--font-display); font-size: 34px; line-height: 1.1; }
+.bar { height: 10px; border-radius: 99px; background: var(--pw-ink); background: color-mix(in srgb, var(--pw-ink) 15%, transparent); overflow: hidden; margin: 8px 0 12px; }
+.bar > i { display: block; height: 100%; background: var(--pw-strong); border-radius: 99px; transition: width .3s; }
+.water-panel .btn { background: transparent; color: var(--pw-ink); border-color: var(--pw-strong); }
+.water-panel .btn.water { background: var(--pw-strong); color: var(--on-strong); }
+.switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; cursor: pointer; }
+.switch input { width: 40px; height: 22px; accent-color: var(--pw-strong); margin: 0; }
+
+/* Alarmas (amarillo suave) */
+.alarms { background: var(--pa-a); color: var(--pa-ink); }
+.alarms .btn.primary { background: var(--pa-strong); border-color: var(--pa-strong); color: var(--on-strong); }
+.alarms .item { background: var(--item); }
+.alarms .x { color: var(--pa-ink); }
+.alarms input[type="checkbox"] { accent-color: var(--pa-strong); width: 18px; height: 18px; }
+
+/* Horario (azul grisáceo suave) */
+.sched { background: var(--ps-a); color: var(--ps-ink); }
+.sched .item { background: var(--item); }
+.sched .item.now { background: var(--ps-now); color: var(--ps-ink); }
+.sched .btn.primary { background: var(--ps-strong); border-color: var(--ps-strong); color: var(--on-strong); }
+.sched .x { color: var(--ps-ink); }
+.sched .tag { color: var(--ps-strong) !important; }
+.sched .item.now .tag { color: var(--ps-ink) !important; }
+
+/* Listas */
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 12px; min-width: 0; }
+.item .when { font-family: var(--font-display); font-size: 19px; min-width: 58px; }
+.item .what { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
+.item.past { opacity: .55; }
+.item.off .what, .item.off .when { opacity: .45; }
+.tag { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.x { border: 0; background: transparent; font-size: 20px; line-height: 1; padding: 4px 7px; border-radius: 8px; }
+.add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.add input[type="text"] { flex: 1 1 140px; }
+.empty { font-size: 14px; padding: 6px 2px; opacity: .85; }
+
+/* Husky pequeño en la esquina */
+.side { position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); bottom: calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 15; pointer-events: none; }
+.husky { display: flex; align-items: flex-end; gap: 6px; }
+.bubble { position: relative; max-width: 190px; background: var(--surface); color: var(--fg); border: 2px solid var(--navy); border-radius: 14px; padding: 8px 12px; font-size: 13px; font-weight: 800; line-height: 1.3; margin-bottom: 44px; box-shadow: 0 4px 0 rgba(0,0,0,.18); transition: opacity .35s, transform .35s; }
+.bubble.hide { opacity: 0; transform: translateY(6px); }
+.bubble::after { content: ""; position: absolute; right: -8px; bottom: 12px; width: 12px; height: 12px; background: var(--surface); border-top: 2px solid var(--navy); border-right: 2px solid var(--navy); transform: rotate(45deg); }
+.husky svg { width: 92px; height: auto; flex: none; display: block; overflow: visible; filter: drop-shadow(0 4px 0 rgba(0,0,0,.18)); }
+.husky .meta { display: none; }
+.f-orange { fill: var(--fox); } .f-white { fill: var(--fox-white); } .f-dark { fill: var(--fox-dark); } .f-ear { fill: var(--fox-ear); }
+.s-dark { stroke: var(--fox-dark); fill: none; stroke-width: 3; stroke-linecap: round; }
+.eye-open { transform-box: fill-box; transform-origin: center; animation: blink 5s infinite; }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+.tail { transform-origin: 168px 205px; animation: wag 3s ease-in-out infinite; }
+@keyframes wag { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(9deg); } }
+.husky[data-mood="alarm"] .tail, .husky[data-mood="water"] .tail { animation-duration: .6s; }
+.husky[data-mood="alarm"] .fox-all { animation: shake .4s infinite; transform-origin: 120px 240px; }
+@keyframes shake { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+.eye-closed, .prop-glass, .prop-book, .prop-zzz, .prop-bell { display: none; }
+.husky[data-mood="rest"] .eye-open { display: none; }
+.husky[data-mood="rest"] .eye-closed, .husky[data-mood="rest"] .prop-zzz { display: block; }
+.husky[data-mood="water"] .prop-glass { display: block; }
+.husky[data-mood="focus"] .prop-book { display: block; }
+.husky[data-mood="alarm"] .prop-bell { display: block; }
+.zzz { font-family: var(--font-display); font-size: 20px; fill: var(--water); }
+
+@media (max-width: 640px) {
+  .pomo { grid-template-columns: minmax(0, 1fr); padding: 20px; }
+  .two { grid-template-columns: minmax(0, 1fr); }
+  .ring-box { width: 200px; height: 200px; }
+  .logo { width: 62px; height: 62px; }
+  .bubble { max-width: 150px; font-size: 12px; }
+  .husky svg { width: 78px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tail, .eye-open, .husky[data-mood="alarm"] .fox-all { animation: none; }
+  .ring-fg, .bar > i, .bubble { transition: none; }
+}
+
+/* Nuevo: herramientas, tareas y extras */
+.right { display: grid; gap: 8px; justify-items: end; }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.tasks { background: color-mix(in srgb, var(--ok) 16%, var(--surface)); color: var(--fg); }
+.extras { background: color-mix(in srgb, var(--accent) 11%, var(--surface)); color: var(--fg); }
+.tasks .item { background: var(--surface); }
+.tasks .item.done .what { text-decoration: line-through; opacity: .55; }
+.tasks input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ok); }
+.tasks .x { color: var(--muted); }
+.tasks .btn.primary { background: var(--ok); border-color: var(--ok); color: #fff; }
+.quote { font-family: var(--font-display); font-size: 20px; line-height: 1.3; margin: 0 0 14px; text-wrap: balance; }
+.streak { display: flex; align-items: baseline; gap: 8px; margin-bottom: 16px; font-weight: 700; }
+.streak b { font-family: var(--font-display); font-size: 40px; line-height: 1; color: var(--accent); }
+.eyebrow2 { font-size: 12px; letter-spacing: .09em; text-transform: uppercase; font-weight: 800; color: var(--muted); margin-bottom: 8px; }
+.husky svg { pointer-events: auto; cursor: pointer; }
+.husky svg.hop { animation: hop .45s ease; }
+@keyframes hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-14px) rotate(-4deg); } 70% { transform: translateY(0) rotate(3deg); } }
+@media (max-width: 640px) { .right { justify-items: stretch; width: 100%; } .tools { justify-content: flex-start; } .clock { text-align: left; } }
+@media (prefers-reduced-motion: reduce) { .husky svg.hop { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 64 64" role="img" aria-label="Logo de Tic Tac Husky: carita naranja con una gota de agua como nariz">
+        <rect width="64" height="64" rx="17" fill="#12304a"/>
+        <polygon points="13,31 16,8 31,20" fill="#ff7a1a"/>
+        <polygon points="51,31 48,8 33,20" fill="#ff7a1a"/>
+        <polygon points="17,27 18,15 26,21" fill="#ffd2a8"/>
+        <polygon points="47,27 46,15 38,21" fill="#ffd2a8"/>
+        <path d="M11 36 Q11 20 32 20 Q53 20 53 36 Q53 51 32 58 Q11 51 11 36Z" fill="#ff7a1a"/>
+        <path d="M11 38 Q22 34 32 44 Q42 34 53 38 Q50 51 32 58 Q14 51 11 38Z" fill="#ffffff"/>
+        <circle cx="23" cy="34" r="3" fill="#12304a"/>
+        <circle cx="41" cy="34" r="3" fill="#12304a"/>
+        <circle cx="24" cy="33" r="1" fill="#fff"/>
+        <circle cx="42" cy="33" r="1" fill="#fff"/>
+        <path d="M32 39 Q26.5 46 26.5 49.5 A5.5 5.5 0 0 0 37.5 49.5 Q37.5 46 32 39Z" fill="#1599e8"/>
+        <path d="M30 47.5 Q29.3 49.6 30.6 51" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+        <circle cx="32" cy="10" r="0"/>
+      </svg>
+      <div>
+        <h1>Tic Tac <span>Husky</span></h1>
+        <div class="tag-line">Estudia, toma agua y llega a tu hora</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="clock">
+        <div class="time tnum" id="clock">--:--:--</div>
+        <div class="date" id="date"></div>
+      </div>
+      <div class="tools">
+        <button class="btn small" type="button" id="btnTheme">Modo oscuro</button>
+        <button class="btn small" type="button" id="btnMute">Sonido: sí</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="alerts" id="alerts" role="status" aria-live="polite"></div>
+
+  <div class="layout">
+    <div class="main">
+
+      <section class="panel pomo timer" aria-label="Pomodoro">
+        <div class="ring-box" id="ringBox">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <circle class="ring-bg" cx="100" cy="100" r="90" fill="none" stroke-width="12"/>
+            <circle class="ring-fg" id="ringFg" cx="100" cy="100" r="90" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="565.49" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-center">
+            <div class="big tnum" id="tBig">25:00</div>
+            <div class="lbl" id="tLbl">Enfoque</div>
+          </div>
+        </div>
+        <div>
+          <div class="tabs" role="group" aria-label="Modo">
+            <button class="tab" data-mode="focus" aria-pressed="true">Enfoque</button>
+            <button class="tab" data-mode="short" aria-pressed="false">Descanso corto</button>
+            <button class="tab" data-mode="long" aria-pressed="false">Descanso largo</button>
+          </div>
+          <div class="ctrls">
+            <button class="btn primary" id="btnStart">Empezar</button>
+            <button class="btn" id="btnReset">Reiniciar</button>
+            <button class="btn ghost" id="btnSkip">Saltar</button>
+          </div>
+          <div class="stats">
+            <span>Pomodoros hoy: <b id="pomosToday">0</b></span>
+            <span>Ciclo: <b id="cycleNow">0</b> de 4</span>
+          </div>
+          <details class="cfg">
+            <summary>Ajustar minutos</summary>
+            <div class="cfg-grid">
+              <label class="field">Enfoque<input type="number" id="cfgFocus" min="1" max="120"></label>
+              <label class="field">Descanso corto<input type="number" id="cfgShort" min="1" max="60"></label>
+              <label class="field">Descanso largo<input type="number" id="cfgLong" min="1" max="90"></label>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <div class="two">
+        <section class="panel water-panel" aria-label="Agua">
+          <div class="panel-head">
+            <h2>Hora de tomar agua</h2>
+            <span class="note"><span id="waterMl">0</span> ml hoy</span>
+          </div>
+          <div class="glasses" id="glasses" aria-hidden="true"></div>
+          <div class="bar" aria-hidden="true"><i id="waterBar" style="width:0%"></i></div>
+          <div class="note" id="waterNextLbl">Próximo recordatorio en</div>
+          <div class="water-next tnum" id="waterNext">--:--</div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn water" id="btnDrink">Tomé un vaso</button>
+            <button class="btn small ghost" id="btnUndo" title="Quitar un vaso">−1</button>
+          </div>
+          <div class="cfg-grid" style="margin-top:14px">
+            <label class="switch"><input type="checkbox" id="waterOn"> Recordarme</label>
+            <label class="field">Cada
+              <select id="waterEvery">
+                <option value="20">20 min</option><option value="30">30 min</option><option value="45">45 min</option>
+                <option value="60">60 min</option><option value="90">90 min</option><option value="120">2 horas</option>
+              </select>
+            </label>
+            <label class="field">Meta (vasos de 250 ml)<input type="number" id="waterGoal" min="1" max="20"></label>
+          </div>
+        </section>
+
+        <section class="panel alarms" aria-label="Alarmas">
+          <div class="panel-head">
+            <h2>Alarmas</h2>
+            <span class="note">Ejemplos, edítalas</span>
+          </div>
+          <ul class="list" id="alarmList"></ul>
+          <div class="add" id="alarmForm">
+            <input type="time" id="alarmTime" aria-label="Hora de la alarma" value="07:00">
+            <input type="text" id="alarmLabel" placeholder="Nombre (ej. Reunión)" maxlength="40" aria-label="Nombre de la alarma">
+            <button class="btn primary" type="button" id="alarmAdd">Agregar</button>
+          </div>
+          <p class="note" style="margin:12px 0 0">Para que suene, deja esta pestaña abierta.</p>
+        </section>
+      </div>
+
+      <section class="panel sched" aria-label="Horario del día">
+        <div class="panel-head">
+          <h2>Horario del día</h2>
+          <span class="note" id="schedNote">Ejemplos, cámbialos a tu rutina</span>
+        </div>
+        <ul class="list" id="schedList"></ul>
+        <div class="add" id="schedForm">
+          <input type="time" id="schedTime" aria-label="Hora del bloque" value="16:00">
+          <input type="text" id="schedWhat" placeholder="Actividad (ej. Clase de ajedrez)" maxlength="60" aria-label="Actividad">
+          <button class="btn primary" type="button" id="schedAdd">Agregar al horario</button>
+        </div>
+      </section>
+
+      <div class="two">
+        <section class="panel tasks" aria-label="Tareas de hoy">
+          <div class="panel-head">
+            <h2>Tareas de hoy</h2>
+            <span class="note" id="taskCount">0 de 0 hechas</span>
+          </div>
+          <ul class="list" id="taskList"></ul>
+          <div class="add">
+            <input type="text" id="taskText" placeholder="Nueva tarea (ej. Leer capítulo 3)" maxlength="60" aria-label="Nueva tarea">
+            <button class="btn primary" type="button" id="taskAdd">Agregar</button>
+          </div>
+          <button class="btn small ghost" type="button" id="taskClear" style="margin-top:10px">Quitar las hechas</button>
+        </section>
+
+        <section class="panel extras" aria-label="Extras">
+          <div class="panel-head"><h2>Para el ánimo</h2></div>
+          <p class="quote" id="quote"></p>
+          <div class="streak"><b id="streak">0</b> <span id="streakLbl">días seguidos con pomodoros</span></div>
+          <div class="eyebrow2">Probar timbres</div>
+          <div class="row">
+            <button class="btn small" type="button" data-snd="water">Agua</button>
+            <button class="btn small" type="button" data-snd="timer">Pomodoro</button>
+            <button class="btn small" type="button" data-snd="alarm">Alarma</button>
+            <button class="btn small" type="button" data-snd="block">Cambio de horario</button>
+          </div>
+          <p class="note" style="margin:10px 0 0">Toca a Husky en la esquina para que te diga algo.</p>
+        </section>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="husky" id="husky" data-mood="idle">
+        <div class="bubble" id="bubble">¡Hola! Soy Husky. ¿Empezamos?</div>
+        <svg viewBox="0 0 240 262" role="img" aria-label="Husky, un zorrito naranja">
+          <g class="fox-all">
+            <g class="tail">
+              <ellipse cx="200" cy="168" rx="24" ry="54" transform="rotate(32 200 168)" class="f-orange"/>
+              <ellipse cx="224" cy="122" rx="14" ry="19" transform="rotate(32 224 122)" class="f-white"/>
+            </g>
+            <ellipse cx="120" cy="200" rx="56" ry="50" class="f-orange"/>
+            <ellipse cx="120" cy="210" rx="30" ry="38" class="f-white"/>
+            <ellipse cx="92" cy="246" rx="17" ry="9" class="f-dark"/>
+            <ellipse cx="148" cy="246" rx="17" ry="9" class="f-dark"/>
+            <polygon points="60,74 70,14 110,52" class="f-orange"/>
+            <polygon points="180,74 170,14 130,52" class="f-orange"/>
+            <polygon points="74,64 75,34 98,52" class="f-ear"/>
+            <polygon points="166,64 165,34 142,52" class="f-ear"/>
+            <path d="M58 102 Q58 54 120 54 Q182 54 182 102 Q182 142 120 164 Q58 142 58 102 Z" class="f-orange"/>
+            <path d="M58 108 Q86 102 120 128 Q154 102 182 108 Q176 144 120 164 Q64 144 58 108 Z" class="f-white"/>
+            <g class="eye-open">
+              <circle cx="94" cy="102" r="7.5" class="f-ear"/><circle cx="146" cy="102" r="7.5" class="f-ear"/>
+              <circle cx="96.5" cy="99.5" r="2.4" class="f-white"/><circle cx="148.5" cy="99.5" r="2.4" class="f-white"/>
+            </g>
+            <g class="eye-closed">
+              <path d="M86 104 Q94 112 102 104" class="s-dark"/><path d="M138 104 Q146 112 154 104" class="s-dark"/>
+            </g>
+            <ellipse cx="120" cy="136" rx="8" ry="5.5" class="f-ear"/>
+            <path d="M120 141 L120 148 M111 150 Q120 158 129 150" class="s-dark" stroke-width="2.5"/>
+
+            <g class="prop-book">
+              <rect x="82" y="206" width="76" height="34" rx="4" class="f-dark"/>
+              <rect x="86" y="210" width="33" height="26" rx="2" fill="#ffffff"/>
+              <rect x="121" y="210" width="33" height="26" rx="2" fill="#ffffff"/>
+              <path d="M92 218 H113 M92 224 H110 M127 218 H148 M127 224 H145" stroke="#9fb3c0" stroke-width="2" stroke-linecap="round"/>
+            </g>
+            <g class="prop-glass">
+              <path d="M142 186 H174 L170 238 Q169 244 163 244 H153 Q147 244 146 238 Z" fill="#cfeaf8" stroke="#1c8fd0" stroke-width="3"/>
+              <path d="M144 202 H172 L170 238 Q169 244 163 244 H153 Q147 244 146 238 Z" fill="#1c8fd0" opacity=".85"/>
+              <ellipse cx="158" cy="168" rx="0" ry="0"/>
+            </g>
+            <g class="prop-bell">
+              <path d="M168 40 q0 -16 14 -16 q14 0 14 16 v10 l5 6 h-38 l5 -6 z" fill="#f5c242" stroke="#8a6410" stroke-width="2"/>
+              <circle cx="182" cy="62" r="4" fill="#8a6410"/>
+            </g>
+            <g class="prop-zzz">
+              <text x="168" y="46" class="zzz">z</text><text x="184" y="30" class="zzz" style="font-size:26px">Z</text><text x="204" y="12" class="zzz" style="font-size:30px">Z</text>
+            </g>
+          </g>
+        </svg>
+        <div class="meta">
+          <div class="name">Husky</div>
+          <div class="sub" id="huskySub">Tu zorrito de compañía</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (s) { return document.querySelector(s); };
+  var KEY = "husky-focus-v1";
+  var CIRC = 565.49;
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function defaults() {
+    return {
+      cfg: { focus: 25, short: 5, long: 15 },
+      water: { on: true, every: 45, goal: 8, date: todayStr(), count: 0 },
+      stats: { date: todayStr(), pomos: 0 },
+      alarms: [
+        { id: 1, time: "06:30", label: "Despertar", on: true },
+        { id: 2, time: "13:00", label: "Almuerzo", on: true }
+      ],
+      schedule: [
+        { id: 1, time: "06:30", what: "Despertar y desayuno" },
+        { id: 2, time: "08:00", what: "Bloque de estudio 1" },
+        { id: 3, time: "10:30", what: "Descanso y fruta" },
+        { id: 4, time: "11:00", what: "Bloque de estudio 2" },
+        { id: 5, time: "13:00", what: "Almuerzo" },
+        { id: 6, time: "15:00", what: "Tareas y proyectos" },
+        { id: 7, time: "18:00", what: "Ejercicio" },
+        { id: 8, time: "21:30", what: "Preparar el día siguiente" }
+      ],
+      tasks: [
+        { id: 1, text: "Repasar mis apuntes", done: false },
+        { id: 2, text: "Terminar una tarea pendiente", done: false },
+        { id: 3, text: "Tomar mi meta de agua", done: false }
+      ],
+      hist: {},
+      ui: { mute: false, theme: "" }
+    };
+  }
+  var S = defaults();
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var p = JSON.parse(raw), d = defaults();
+      S = {
+        cfg: Object.assign(d.cfg, p.cfg || {}),
+        water: Object.assign(d.water, p.water || {}),
+        stats: Object.assign(d.stats, p.stats || {}),
+        alarms: Array.isArray(p.alarms) ? p.alarms : d.alarms,
+        schedule: Array.isArray(p.schedule) ? p.schedule : d.schedule,
+        tasks: Array.isArray(p.tasks) ? p.tasks : d.tasks,
+        hist: (p.hist && typeof p.hist === "object") ? p.hist : d.hist,
+        ui: Object.assign(d.ui, p.ui || {})
+      };
+    }
+  } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  function rollDay() {
+    var t = todayStr();
+    if (S.water.date !== t) { S.water.date = t; S.water.count = 0; }
+    if (S.stats.date !== t) { S.stats.date = t; S.stats.pomos = 0; }
+  }
+  rollDay();
+
+  /* ---------- Sonido ---------- */
+  var ac = null;
+  function audio() {
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
+    if (ac && ac.state === "suspended") { try { ac.resume(); } catch (e) {} }
+    return ac;
+  }
+  document.addEventListener("pointerdown", audio);
+  document.addEventListener("keydown", audio);
+  function tone(f, t0, dur, vol) {
+    var c = ac; if (!c || !f) return;
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.18, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  var SEQ = {
+    water: [[660, 0], [880, .22], [1100, .44]],
+    timer: [[523, 0], [659, .2], [784, .4], [1046, .6]],
+    alarm: [[880, 0], [880, .3], [880, .6], [1175, .9]]
+  };
+  function bell(f, t0, dur, vol) {
+    var c = ac; if (!c) return;
+    [[1, 1], [2.76, 0.38], [5.4, 0.16]].forEach(function (p) {
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = "sine"; o.frequency.value = f * p[0];
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol * p[1], t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(c.destination);
+      o.start(t0); o.stop(t0 + dur + 0.05);
+    });
+  }
+  var BLOCK = [[659, 0], [523, 0.5], [587, 1.0], [392, 1.5], [392, 2.3], [587, 2.8], [659, 3.3], [523, 3.8]];
+  function chime(kind, force) {
+    if (S.ui.mute && !force) return;
+    var c = audio(); if (!c) return;
+    var t = c.currentTime + 0.02;
+    if (kind === "block") { BLOCK.forEach(function (n) { bell(n[0], t + n[1], 1.5, 0.3); }); return; }
+    (SEQ[kind] || SEQ.timer).forEach(function (n) { tone(n[0], t + n[1], 0.28, 0.2); });
+  }
+
+  /* ---------- Alertas ---------- */
+  var alerts = [];
+  var loops = {};
+  function addAlert(a) {
+    alerts = alerts.filter(function (x) { return x.id !== a.id; });
+    alerts.push(a);
+    chime(a.sound);
+    if (a.repeat) {
+      var n = 0;
+      clearInterval(loops[a.id]);
+      loops[a.id] = setInterval(function () {
+        n++; if (n > 12) { clearInterval(loops[a.id]); return; }
+        chime(a.sound);
+      }, 2200);
+    }
+    renderAlerts(); renderHusky();
+  }
+  function closeAlert(id) {
+    clearInterval(loops[id]);
+    alerts = alerts.filter(function (x) { return x.id !== id; });
+    renderAlerts(); renderHusky();
+  }
+  function renderAlerts() {
+    var box = $("#alerts");
+    box.textContent = "";
+    alerts.forEach(function (a) {
+      var el = document.createElement("div");
+      el.className = "alert " + (a.kind || "");
+      var m = document.createElement("div"); m.className = "msg";
+      var b = document.createElement("b"); b.textContent = a.title;
+      var s = document.createElement("span"); s.textContent = a.text;
+      m.appendChild(b); m.appendChild(s); el.appendChild(m);
+      var acts = document.createElement("div"); acts.className = "acts";
+      a.actions.forEach(function (ac2) {
+        var btn = document.createElement("button");
+        btn.className = "btn small " + (ac2.cls || "");
+        btn.textContent = ac2.label;
+        btn.addEventListener("click", function () { closeAlert(a.id); ac2.run && ac2.run(); });
+        acts.appendChild(btn);
+      });
+      el.appendChild(acts);
+      box.appendChild(el);
+    });
+  }
+
+  /* ---------- Pomodoro ---------- */
+  var MODES = { focus: "Enfoque", short: "Descanso corto", long: "Descanso largo" };
+  var T = { mode: "focus", remaining: S.cfg.focus * 60000, running: false, endAt: 0, cycle: 0 };
+  function modeMs(m) { return S.cfg[m] * 60000; }
+  function setMode(m) {
+    T.mode = m; T.running = false; T.remaining = modeMs(m);
+    renderTimer(); renderHusky();
+  }
+  function toggleTimer() {
+    audio();
+    if (T.running) { T.remaining = Math.max(0, T.endAt - Date.now()); T.running = false; }
+    else { if (T.remaining <= 0) T.remaining = modeMs(T.mode); T.endAt = Date.now() + T.remaining; T.running = true; }
+    renderTimer(); renderHusky();
+  }
+  function nextMode() {
+    if (T.mode === "focus") return (T.cycle % 4 === 0 && T.cycle > 0) ? "long" : "short";
+    return "focus";
+  }
+  function finishTimer() {
+    T.running = false; T.remaining = 0;
+    var wasFocus = T.mode === "focus";
+    if (wasFocus) { T.cycle++; rollDay(); S.stats.pomos++; S.hist[todayStr()] = S.stats.pomos; save(); renderExtras(); }
+    var nm = nextMode();
+    if (!wasFocus && T.mode === "long") T.cycle = 0;
+    var title = wasFocus ? "¡Terminaste un pomodoro!" : "Se acabó el descanso";
+    var text = wasFocus ? "Buen trabajo. Siguiente: " + MODES[nm].toLowerCase() + " de " + S.cfg[nm] + " min." : "Vuelve al enfoque de " + S.cfg.focus + " min.";
+    addAlert({
+      id: "timer", kind: "", title: title, text: text, sound: "timer",
+      actions: [
+        { label: "Empezar " + MODES[nm].toLowerCase(), cls: "primary", run: function () { setMode(nm); toggleTimer(); } },
+        { label: "Más tarde", run: function () { setMode(nm); } }
+      ]
+    });
+    renderTimer();
+  }
+  function fmt(ms) {
+    var s = Math.ceil(ms / 1000); if (s < 0) s = 0;
+    return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  }
+  function renderTimer() {
+    var rem = T.running ? Math.max(0, T.endAt - Date.now()) : T.remaining;
+    var total = modeMs(T.mode);
+    $("#tBig").textContent = fmt(rem);
+    $("#tLbl").textContent = MODES[T.mode] + (T.running ? "" : (rem === total ? "" : " · en pausa"));
+    var frac = total ? rem / total : 0;
+    $("#ringFg").style.strokeDashoffset = String(CIRC * (1 - frac));
+    $("#ringBox").classList.toggle("rest", T.mode !== "focus");
+    $("#btnStart").textContent = T.running ? "Pausar" : (rem === total ? "Empezar" : "Seguir");
+    document.querySelectorAll(".tab").forEach(function (t) { t.setAttribute("aria-pressed", String(t.dataset.mode === T.mode)); });
+    $("#pomosToday").textContent = S.stats.pomos;
+    $("#cycleNow").textContent = T.cycle % 4;
+    document.title = T.running ? fmt(rem) + " · " + MODES[T.mode] + " | Tic Tac Husky" : "Tic Tac Husky";
+  }
+  document.querySelectorAll(".tab").forEach(function (t) { t.addEventListener("click", function () { setMode(t.dataset.mode); }); });
+  $("#btnStart").addEventListener("click", toggleTimer);
+  $("#btnReset").addEventListener("click", function () { setMode(T.mode); });
+  $("#btnSkip").addEventListener("click", function () {
+    if (T.mode === "focus") { T.cycle++; }
+    var nm = nextMode();
+    if (T.mode === "long") T.cycle = 0;
+    setMode(nm);
+  });
+  [["#cfgFocus", "focus"], ["#cfgShort", "short"], ["#cfgLong", "long"]].forEach(function (p) {
+    var el = $(p[0]); el.value = S.cfg[p[1]];
+    el.addEventListener("change", function () {
+      var v = Math.max(1, Math.min(120, parseInt(el.value, 10) || S.cfg[p[1]]));
+      el.value = v; S.cfg[p[1]] = v; save();
+      if (!T.running && T.mode === p[1]) setMode(p[1]);
+    });
+  });
+
+  /* ---------- Agua ---------- */
+  var waterNextAt = Date.now() + S.water.every * 60000;
+  var glassSvg = '<svg class="glass" viewBox="0 0 26 36"><rect class="fill" x="4" y="14" width="18" height="18" rx="2"/><path class="cup" d="M3 3 H23 L21 31 Q20.6 34 18 34 H8 Q5.4 34 5 31 Z"/></svg>';
+  function renderWater() {
+    rollDay();
+    var w = S.water;
+    var box = $("#glasses"); box.textContent = "";
+    var n = Math.max(w.goal, w.count);
+    for (var i = 0; i < n; i++) {
+      var span = document.createElement("span");
+      span.innerHTML = glassSvg;
+      if (i < w.count) span.firstChild.classList.add("on");
+      box.appendChild(span.firstChild);
+    }
+    $("#waterMl").textContent = w.count * 250;
+    $("#waterBar").style.width = Math.min(100, Math.round(w.count / w.goal * 100)) + "%";
+    $("#waterOn").checked = w.on;
+    $("#waterEvery").value = String(w.every);
+    $("#waterGoal").value = w.goal;
+  }
+  function renderWaterTime() {
+    var el = $("#waterNext");
+    if (!S.water.on) { el.textContent = "Apagado"; $("#waterNextLbl").textContent = "Recordatorios de agua"; return; }
+    $("#waterNextLbl").textContent = "Próximo recordatorio en";
+    el.textContent = fmt(Math.max(0, waterNextAt - Date.now()));
+  }
+  function waterDue() {
+    waterNextAt = Date.now() + 5 * 60000;
+    addAlert({
+      id: "water", kind: "water", title: "Hora de tomar agua", sound: "water", repeat: false,
+      text: "Un vaso ahora. Tu cuerpo y tu concentración lo agradecen.",
+      actions: [
+        { label: "Ya tomé agua", cls: "water", run: drink },
+        { label: "Recuérdame en 5 min" }
+      ]
+    });
+  }
+  function drink() {
+    rollDay();
+    S.water.count++; save();
+    waterNextAt = Date.now() + S.water.every * 60000;
+    closeAlert("water");
+    renderWater(); renderHusky(true);
+    say(S.water.count >= S.water.goal ? "¡Meta de agua cumplida! Eres un campeón." : "¡Glup glup! Van " + S.water.count + " de " + S.water.goal + " vasos.");
+  }
+  $("#btnDrink").addEventListener("click", function () { audio(); drink(); });
+  $("#btnUndo").addEventListener("click", function () { if (S.water.count > 0) { S.water.count--; save(); renderWater(); } });
+  $("#waterOn").addEventListener("change", function (e) {
+    S.water.on = e.target.checked; save();
+    waterNextAt = Date.now() + S.water.every * 60000; renderWaterTime();
+  });
+  $("#waterEvery").addEventListener("change", function (e) {
+    S.water.every = parseInt(e.target.value, 10); save();
+    waterNextAt = Date.now() + S.water.every * 60000; renderWaterTime();
+  });
+  $("#waterGoal").addEventListener("change", function (e) {
+    var v = Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 8));
+    S.water.goal = v; save(); renderWater();
+  });
+
+  /* ---------- Alarmas ---------- */
+  var lastAlarmMinute = "";
+  function hhmm(d) { return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
+  function renderAlarms() {
+    var ul = $("#alarmList"); ul.textContent = "";
+    var sorted = S.alarms.slice().sort(function (a, b) { return a.time < b.time ? -1 : 1; });
+    if (!sorted.length) { var li0 = document.createElement("li"); li0.className = "empty"; li0.textContent = "Sin alarmas. Agrega una abajo."; ul.appendChild(li0); return; }
+    sorted.forEach(function (a) {
+      var li = document.createElement("li"); li.className = "item" + (a.on ? "" : " off");
+      var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = a.on; cb.setAttribute("aria-label", "Activar alarma " + a.time);
+      cb.addEventListener("change", function () { a.on = cb.checked; save(); renderAlarms(); });
+      var w = document.createElement("span"); w.className = "when tnum"; w.textContent = a.time;
+      var t = document.createElement("span"); t.className = "what"; t.textContent = a.label || "Alarma";
+      var x = document.createElement("button"); x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", "Borrar alarma " + a.time);
+      x.addEventListener("click", function () { S.alarms = S.alarms.filter(function (z) { return z.id !== a.id; }); save(); renderAlarms(); });
+      li.appendChild(cb); li.appendChild(w); li.appendChild(t); li.appendChild(x); ul.appendChild(li);
+    });
+  }
+  function addAlarm() {
+    audio();
+    var tm = $("#alarmTime").value;
+    if (!tm) { $("#alarmTime").focus(); return; }
+    S.alarms.push({ id: Date.now(), time: tm, label: $("#alarmLabel").value.trim(), on: true });
+    $("#alarmLabel").value = ""; save(); renderAlarms();
+  }
+  $("#alarmAdd").addEventListener("click", addAlarm);
+  ["#alarmTime", "#alarmLabel"].forEach(function (id) {
+    $(id).addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addAlarm(); } });
+  });
+  function checkAlarms(now) {
+    var k = hhmm(now) + "|" + todayStr();
+    if (k === lastAlarmMinute) return;
+    lastAlarmMinute = k;
+    var cur = hhmm(now);
+    S.alarms.forEach(function (a) {
+      if (a.on && a.time === cur) {
+        addAlert({
+          id: "alarm-" + a.id, kind: "", title: "⏰ " + (a.label || "Alarma"), text: "Son las " + a.time + ".", sound: "alarm", repeat: true,
+          actions: [{ label: "Detener", cls: "primary" }]
+        });
+      }
+    });
+  }
+
+  /* ---------- Horario ---------- */
+  function toMin(s) { var p = s.split(":"); return (+p[0]) * 60 + (+p[1]); }
+  var lastSchedMinute = "";
+  function checkSchedule(now) {
+    var k = hhmm(now) + "|" + todayStr();
+    if (k === lastSchedMinute) return;
+    lastSchedMinute = k;
+    var cur = hhmm(now);
+    S.schedule.forEach(function (b) {
+      if (b.time === cur) {
+        addAlert({
+          id: "alarm-block", kind: "", title: "🔔 Cambió tu horario", sound: "block",
+          text: "Ahora toca: " + b.what + " (" + b.time + ")",
+          actions: [{ label: "Entendido", cls: "primary" }]
+        });
+      }
+    });
+  }
+  var lastSchedKey = "";
+  function renderSchedule(force) {
+    var now = new Date(), nm = now.getHours() * 60 + now.getMinutes();
+    var sorted = S.schedule.slice().sort(function (a, b) { return toMin(a.time) - toMin(b.time); });
+    var cur = -1;
+    sorted.forEach(function (b, i) { if (toMin(b.time) <= nm) cur = i; });
+    var key = cur + "|" + sorted.length + "|" + sorted.map(function (b) { return b.id; }).join(",");
+    if (!force && key === lastSchedKey) return;
+    lastSchedKey = key;
+    var ul = $("#schedList"); ul.textContent = "";
+    if (!sorted.length) { var li0 = document.createElement("li"); li0.className = "empty"; li0.textContent = "Tu horario está vacío. Agrega tu primer bloque abajo."; ul.appendChild(li0); return; }
+    sorted.forEach(function (b, i) {
+      var li = document.createElement("li");
+      li.className = "item" + (i === cur ? " now" : (i < cur ? " past" : ""));
+      var w = document.createElement("span"); w.className = "when tnum"; w.textContent = b.time;
+      var t = document.createElement("span"); t.className = "what"; t.textContent = b.what;
+      li.appendChild(w); li.appendChild(t);
+      if (i === cur) { var tg = document.createElement("span"); tg.className = "tag"; tg.textContent = "Ahora"; li.appendChild(tg); }
+      else if (i === cur + 1) { var tg2 = document.createElement("span"); tg2.className = "tag"; tg2.style.color = "var(--muted)"; tg2.textContent = "Sigue"; li.appendChild(tg2); }
+      var x = document.createElement("button"); x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", "Borrar " + b.what);
+      x.addEventListener("click", function () { S.schedule = S.schedule.filter(function (z) { return z.id !== b.id; }); save(); renderSchedule(true); });
+      li.appendChild(x); ul.appendChild(li);
+    });
+  }
+  function addSched() {
+    var tm = $("#schedTime").value, wh = $("#schedWhat").value.trim();
+    if (!tm) { $("#schedTime").focus(); return; }
+    if (!wh) { $("#schedWhat").focus(); return; }
+    S.schedule.push({ id: Date.now(), time: tm, what: wh });
+    $("#schedWhat").value = ""; save(); renderSchedule(true);
+  }
+  $("#schedAdd").addEventListener("click", addSched);
+  ["#schedTime", "#schedWhat"].forEach(function (id) {
+    $(id).addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addSched(); } });
+  });
+
+  /* ---------- Husky ---------- */
+  var LINES = {
+    idle: ["¡Hola! Soy Husky. ¿Empezamos un pomodoro?", "Un vaso de agua y a darle.", "Elige tu bloque y yo te acompaño."],
+    focus: ["Tú concentrado, yo vigilo el reloj.", "Un pomodoro a la vez.", "Silencio de zorrito: tú puedes.", "Respira y sigue, vas bien."],
+    rest: ["Zzz... descansa los ojos.", "Estira la espalda un ratito.", "Aprovecha para tomar agua."],
+    water: ["¡Hora de tomar agua!", "Glup glup, un vaso ahora.", "Tu cerebro necesita agua."],
+    alarm: ["¡Suena tu alarma!", "¡Ring ring! Es la hora."]
+  };
+  var mood = "idle", lastLine = "";
+  function pick(m) {
+    var arr = LINES[m] || LINES.idle, l;
+    do { l = arr[Math.floor(Math.random() * arr.length)]; } while (arr.length > 1 && l === lastLine);
+    lastLine = l; return l;
+  }
+  var bubbleTimer = null;
+  function say(t) {
+    var b = $("#bubble");
+    b.textContent = t; lastLine = t; b.classList.remove("hide");
+    clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(function () { if (!alerts.length) b.classList.add("hide"); }, 8000);
+  }
+  function currentMood() {
+    for (var i = 0; i < alerts.length; i++) if (alerts[i].id.indexOf("alarm-") === 0) return "alarm";
+    if (alerts.some(function (a) { return a.id === "water"; })) return "water";
+    if (T.running) return T.mode === "focus" ? "focus" : "rest";
+    return "idle";
+  }
+  function renderHusky(keepBubble) {
+    var m = currentMood();
+    $("#husky").dataset.mood = m;
+    var sub = { idle: "Tu zorrito de compañía", focus: "Estudiando contigo", rest: "Descansando", water: "Con su vaso de agua", alarm: "¡Atento!" };
+    $("#huskySub").textContent = sub[m];
+    if (m !== mood) { mood = m; if (!keepBubble) say(pick(m)); }
+  }
+  setInterval(function () { if (!alerts.length) say(pick(mood)); }, 25000);
+
+  /* ---------- Reloj y bucle principal ---------- */
+  var DAYS = new Intl.DateTimeFormat("es-PE", { weekday: "long", day: "numeric", month: "long" });
+  function tick() {
+    var now = new Date();
+    $("#clock").textContent = now.toLocaleTimeString("es-PE", { hour12: false });
+    $("#date").textContent = DAYS.format(now);
+    if (T.running) {
+      if (Date.now() >= T.endAt) finishTimer(); else renderTimer();
+    }
+    if (S.water.on) {
+      if (Date.now() >= waterNextAt) waterDue();
+      renderWaterTime();
+    }
+    checkAlarms(now);
+    checkSchedule(now);
+    renderSchedule(false);
+  }
+
+  /* ---------- Tareas ---------- */
+  function renderTasks() {
+    var ul = $("#taskList"); ul.textContent = "";
+    if (!S.tasks.length) { var e = document.createElement("li"); e.className = "empty"; e.textContent = "No hay tareas. Escribe una abajo."; ul.appendChild(e); }
+    S.tasks.forEach(function (t) {
+      var li = document.createElement("li"); li.className = "item" + (t.done ? " done" : "");
+      var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = t.done; cb.setAttribute("aria-label", "Hecha: " + t.text);
+      cb.addEventListener("change", function () {
+        t.done = cb.checked; save(); renderTasks();
+        if (t.done && S.tasks.every(function (z) { return z.done; })) say("¡Terminaste todas tus tareas! Qué crack.");
+      });
+      var w = document.createElement("span"); w.className = "what"; w.textContent = t.text;
+      var x = document.createElement("button"); x.className = "x"; x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Borrar " + t.text);
+      x.addEventListener("click", function () { S.tasks = S.tasks.filter(function (z) { return z.id !== t.id; }); save(); renderTasks(); });
+      li.appendChild(cb); li.appendChild(w); li.appendChild(x); ul.appendChild(li);
+    });
+    var done = S.tasks.filter(function (t) { return t.done; }).length;
+    $("#taskCount").textContent = done + " de " + S.tasks.length + " hechas";
+  }
+  function addTask() {
+    var v = $("#taskText").value.trim();
+    if (!v) { $("#taskText").focus(); return; }
+    S.tasks.push({ id: Date.now(), text: v, done: false });
+    $("#taskText").value = ""; save(); renderTasks();
+  }
+  $("#taskAdd").addEventListener("click", addTask);
+  $("#taskText").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addTask(); } });
+  $("#taskClear").addEventListener("click", function () { S.tasks = S.tasks.filter(function (t) { return !t.done; }); save(); renderTasks(); });
+
+  /* ---------- Extras ---------- */
+  var QUOTES = [
+    "Un pomodoro a la vez y el día se arma solo.",
+    "Empezar es lo más difícil. Ya lo estás haciendo.",
+    "Descansar también es parte de estudiar.",
+    "Lo pequeño que haces hoy suma mañana.",
+    "Tu cerebro rinde más con agua y pausas.",
+    "No tiene que salir perfecto, tiene que salir.",
+    "Cinco minutos de enfoque ya son un avance.",
+    "Hoy te toca un poquito mejor que ayer."
+  ];
+  function dstr(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function renderExtras() {
+    var d = new Date(), doy = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+    $("#quote").textContent = "“" + QUOTES[doy % QUOTES.length] + "”";
+    var c = new Date(), n = 0;
+    if (!(S.hist[dstr(c)] > 0)) c.setDate(c.getDate() - 1);
+    while (S.hist[dstr(c)] > 0 && n < 400) { n++; c.setDate(c.getDate() - 1); }
+    $("#streak").textContent = n;
+    $("#streakLbl").textContent = n === 1 ? "día con pomodoros" : "días seguidos con pomodoros";
+  }
+  document.querySelectorAll("[data-snd]").forEach(function (b) {
+    b.addEventListener("click", function () { audio(); chime(b.dataset.snd, true); });
+  });
+
+  /* ---------- Tema y sonido ---------- */
+  function isDark() {
+    var t = document.documentElement.getAttribute("data-theme");
+    if (t) return t === "dark";
+    return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }
+  function applyTheme() {
+    if (S.ui.theme) document.documentElement.setAttribute("data-theme", S.ui.theme);
+    $("#btnTheme").textContent = isDark() ? "Modo claro" : "Modo oscuro";
+  }
+  $("#btnTheme").addEventListener("click", function () { S.ui.theme = isDark() ? "light" : "dark"; save(); applyTheme(); });
+  function applyMute() { $("#btnMute").textContent = S.ui.mute ? "Sonido: no" : "Sonido: sí"; }
+  $("#btnMute").addEventListener("click", function () { S.ui.mute = !S.ui.mute; save(); applyMute(); });
+
+  /* ---------- Husky se deja querer ---------- */
+  var PETS = ["¡Wuf! Perdón, soy zorrito. Ñam.", "Me hiciste cosquillas.", "¡Sigue así, vas muy bien!", "Más caricias, por favor.", "¿Ya tomaste agua?", "Te acompaño toda la tarde."];
+  $("#husky svg").addEventListener("click", function () {
+    var el = this; say(PETS[Math.floor(Math.random() * PETS.length)]);
+    el.classList.remove("hop"); void el.getBoundingClientRect(); el.classList.add("hop");
+  });
+
+  renderTimer(); renderWater(); renderWaterTime(); renderAlarms(); renderSchedule(true); renderHusky();
+  renderTasks(); renderExtras(); applyTheme(); applyMute();
+  say("¡Hola! Soy Husky. ¿Empezamos?");
+  tick();
+  setInterval(tick, 500);
+})();
+</script>
